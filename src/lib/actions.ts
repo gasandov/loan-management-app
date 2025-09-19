@@ -2,7 +2,6 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 // Import LoanStatus enum from Prisma client
@@ -29,8 +28,14 @@ const createLoanSchema = z.object({
   borrowerName: z.string().min(2, 'Borrower name must be at least 2 characters'),
   borrowerEmail: z.string().email('Invalid email address'),
   amount: z.number().min(1, 'Amount must be greater than 0'),
-  interestRate: z.number().min(0, 'Interest rate cannot be negative').max(100, 'Interest rate cannot exceed 100%'),
-  termMonths: z.number().min(1, 'Term must be at least 1 month').max(480, 'Term cannot exceed 40 years'),
+  interestRate: z
+    .number()
+    .min(0, 'Interest rate cannot be negative')
+    .max(100, 'Interest rate cannot exceed 100%'),
+  termMonths: z
+    .number()
+    .min(1, 'Term must be at least 1 month')
+    .max(480, 'Term cannot exceed 40 years'),
   purpose: z.string().min(5, 'Purpose must be at least 5 characters'),
   notes: z.string().optional(),
 })
@@ -48,12 +53,14 @@ const updateLoanSchema = createLoanSchema.partial().extend({
 // Helper function to calculate loan details
 function calculateLoanDetails(amount: number, interestRate: number, termMonths: number) {
   const monthlyRate = interestRate / 100 / 12
-  const monthlyPayment = monthlyRate === 0 
-    ? amount / termMonths 
-    : (amount * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / (Math.pow(1 + monthlyRate, termMonths) - 1)
-  
-  const totalInterest = (monthlyPayment * termMonths) - amount
-  
+  const monthlyPayment =
+    monthlyRate === 0
+      ? amount / termMonths
+      : (amount * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
+        (Math.pow(1 + monthlyRate, termMonths) - 1)
+
+  const totalInterest = monthlyPayment * termMonths - amount
+
   return {
     monthlyPayment: Math.round(monthlyPayment * 100) / 100,
     totalInterest: Math.round(totalInterest * 100) / 100,
@@ -64,11 +71,11 @@ function calculateLoanDetails(amount: number, interestRate: number, termMonths: 
 export async function getLoans(filters?: { status?: LoanStatus; search?: string }) {
   try {
     const where: Record<string, unknown> = {}
-    
+
     if (filters?.status) {
       where.status = filters.status
     }
-    
+
     if (filters?.search) {
       where.OR = [
         { borrowerName: { contains: filters.search, mode: 'insensitive' } },
@@ -76,12 +83,12 @@ export async function getLoans(filters?: { status?: LoanStatus; search?: string 
         { purpose: { contains: filters.search, mode: 'insensitive' } },
       ]
     }
-    
+
     const loans = await prisma.loan.findMany({
       where,
       orderBy: { createdAt: 'desc' },
     })
-    
+
     return { success: true, data: loans }
   } catch (error) {
     console.error('Error fetching loans:', error)
@@ -94,11 +101,11 @@ export async function getLoanById(id: string) {
     const loan = await prisma.loan.findUnique({
       where: { id },
     })
-    
+
     if (!loan) {
       return { success: false, error: 'Loan not found' }
     }
-    
+
     return { success: true, data: loan }
   } catch (error) {
     console.error('Error fetching loan:', error)
@@ -106,7 +113,10 @@ export async function getLoanById(id: string) {
   }
 }
 
-export async function createLoan(prevState: FormState | null, formData: FormData): Promise<FormState> {
+export async function createLoan(
+  prevState: FormState | null,
+  formData: FormData
+): Promise<FormState> {
   try {
     const validatedFields = createLoanSchema.safeParse({
       borrowerName: formData.get('borrowerName'),
@@ -139,14 +149,19 @@ export async function createLoan(prevState: FormState | null, formData: FormData
     })
 
     revalidatePath('/loans')
-    redirect('/loans')
+
+    // Return success state instead of redirecting immediately
+    return { success: true }
   } catch (error) {
     console.error('Error creating loan:', error)
     return { success: false, error: 'Failed to create loan' }
   }
 }
 
-export async function updateLoan(prevState: FormState | null, formData: FormData): Promise<FormState> {
+export async function updateLoan(
+  prevState: FormState | null,
+  formData: FormData
+): Promise<FormState> {
   try {
     const id = formData.get('id') as string
     const validatedFields = updateLoanSchema.safeParse({
@@ -154,11 +169,15 @@ export async function updateLoan(prevState: FormState | null, formData: FormData
       borrowerName: formData.get('borrowerName'),
       borrowerEmail: formData.get('borrowerEmail'),
       amount: formData.get('amount') ? parseFloat(formData.get('amount') as string) : undefined,
-      interestRate: formData.get('interestRate') ? parseFloat(formData.get('interestRate') as string) : undefined,
-      termMonths: formData.get('termMonths') ? parseInt(formData.get('termMonths') as string) : undefined,
+      interestRate: formData.get('interestRate')
+        ? parseFloat(formData.get('interestRate') as string)
+        : undefined,
+      termMonths: formData.get('termMonths')
+        ? parseInt(formData.get('termMonths') as string)
+        : undefined,
       purpose: formData.get('purpose'),
       notes: formData.get('notes') || undefined,
-      status: formData.get('status') as LoanStatus || undefined,
+      status: (formData.get('status') as LoanStatus) || undefined,
     })
 
     if (!validatedFields.success) {
@@ -196,7 +215,9 @@ export async function updateLoan(prevState: FormState | null, formData: FormData
 
     revalidatePath('/loans')
     revalidatePath(`/loans/${loanId}`)
-    redirect('/loans')
+
+    // Return success state instead of redirecting immediately
+    return { success: true }
   } catch (error) {
     console.error('Error updating loan:', error)
     return { success: false, error: 'Failed to update loan' }

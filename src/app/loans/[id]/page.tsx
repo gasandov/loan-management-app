@@ -36,7 +36,8 @@ function getStatusVariant(status: string) {
 }
 
 export default async function LoanDetailPage({ params }: LoanDetailPageProps) {
-  const result = await getLoanById(params.id)
+  const { id } = await params
+  const result = await getLoanById(id)
 
   if (!result.success || !result.data) {
     notFound()

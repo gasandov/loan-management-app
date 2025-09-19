@@ -15,9 +15,10 @@ interface LoansPageProps {
 }
 
 export default async function LoansPage({ searchParams }: LoansPageProps) {
+  const { search, status } = await searchParams
   const filters = {
-    search: searchParams.search,
-    status: searchParams.status as keyof typeof LoanStatus,
+    search,
+    status: status as keyof typeof LoanStatus,
   }
 
   return (

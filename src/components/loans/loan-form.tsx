@@ -9,9 +9,9 @@ import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { createLoan, updateLoan } from '@/lib/actions'
 import { Loan, LoanStatus } from '@/types/loan'
-import { AlertCircleIcon, CalculatorIcon } from 'lucide-react'
-import { useState } from 'react'
-import { useFormState } from 'react-dom'
+import { AlertCircleIcon, CalculatorIcon, CheckCircleIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useActionState, useState } from 'react'
 
 interface LoanFormProps {
   loan?: Loan
@@ -27,11 +27,12 @@ type FormState = {
 const initialState: FormState = { success: false }
 
 export function LoanForm({ loan, isEditing = false }: LoanFormProps) {
-  const [formState, formAction] = useFormState(
+  const [formState, formAction, isPending] = useActionState(
     isEditing ? updateLoan : createLoan,
     initialState
   )
-  
+  const router = useRouter()
+
   const [amount, setAmount] = useState(loan?.amount?.toString() || '')
   const [interestRate, setInterestRate] = useState(loan?.interestRate?.toString() || '')
   const [termMonths, setTermMonths] = useState(loan?.termMonths?.toString() || '')
@@ -59,12 +60,21 @@ export function LoanForm({ loan, isEditing = false }: LoanFormProps) {
   return (
     <form action={formAction} className="space-y-6">
       {isEditing && <input type="hidden" name="id" value={loan?.id} />}
-      
-      {/* Error Display */}
+
+      {/* Error/Success Display */}
       {formState?.error && (
         <Alert variant="destructive">
           <AlertCircleIcon className="h-4 w-4" />
           <AlertDescription>{formState.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {formState?.success && (
+        <Alert>
+          <CheckCircleIcon className="h-4 w-4" />
+          <AlertDescription>
+            {isEditing ? 'Loan updated successfully!' : 'Loan created successfully!'}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -179,7 +189,11 @@ export function LoanForm({ loan, isEditing = false }: LoanFormProps) {
               ${calculatedPayment.toLocaleString()}/month
             </p>
             <p className="text-sm text-blue-700 mt-1">
-              Total interest: ${((calculatedPayment * parseInt(termMonths || '0')) - parseFloat(amount || '0')).toLocaleString()}
+              Total interest: $
+              {(
+                calculatedPayment * parseInt(termMonths || '0') -
+                parseFloat(amount || '0')
+              ).toLocaleString()}
             </p>
           </div>
         )}
@@ -190,7 +204,7 @@ export function LoanForm({ loan, isEditing = false }: LoanFormProps) {
       {/* Loan Purpose and Notes */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Additional Information</h3>
-        
+
         <div className="space-y-2">
           <Label htmlFor="purpose">Loan Purpose *</Label>
           <Textarea
@@ -243,12 +257,32 @@ export function LoanForm({ loan, isEditing = false }: LoanFormProps) {
 
       {/* Form Actions */}
       <div className="flex justify-end space-x-3 pt-6">
-        <Button type="button" variant="outline" onClick={() => window.history.back()}>
-          Cancel
-        </Button>
-        <Button type="submit">
-          {isEditing ? 'Update Loan' : 'Create Loan'}
-        </Button>
+        {formState?.success ? (
+          <>
+            <Button type="button" variant="outline" onClick={() => router.push('/loans')}>
+              View All Loans
+            </Button>
+            {!isEditing && (
+              <Button type="button" onClick={() => window.location.reload()}>
+                Create Another Loan
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => window.history.back()}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? 'Submitting...' : isEditing ? 'Update Loan' : 'Create Loan'}
+            </Button>
+          </>
+        )}
       </div>
     </form>
   )
