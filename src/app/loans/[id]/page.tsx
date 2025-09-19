@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { getLoanById } from '@/lib/actions'
 import { LoanStatus } from '@/types/loan'
 import { format, formatDistanceToNow } from 'date-fns'
-import { ArrowLeftIcon, CalendarIcon, DollarSignIcon, PencilIcon, PercentIcon, UserIcon } from 'lucide-react'
+import { ArrowLeftIcon, CalendarIcon, DollarSignIcon, PencilIcon, UserIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -116,10 +116,7 @@ export default async function LoanDetailPage({ params }: LoanDetailPageProps) {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Interest Rate</label>
-                  <p className="text-2xl font-bold flex items-center">
-                    {loan.interestRate}%
-                    <PercentIcon className="w-5 h-5 ml-1" />
-                  </p>
+                  <p className="text-2xl font-bold flex items-center">{loan.interestRate}%</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Term</label>
@@ -183,9 +180,7 @@ export default async function LoanDetailPage({ params }: LoanDetailPageProps) {
           <Card>
             <CardHeader>
               <CardTitle>Status Actions</CardTitle>
-              <CardDescription>
-                Update the loan status based on its current stage
-              </CardDescription>
+              <CardDescription>Update the loan status based on its current stage</CardDescription>
             </CardHeader>
             <CardContent>
               <LoanStatusActions loan={loan} />

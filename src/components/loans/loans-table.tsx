@@ -17,13 +17,11 @@ interface LoansTableProps {
 function getStatusVariant(status: string) {
   switch (status) {
     case LoanStatus.APPROVED:
-      return 'default'
     case LoanStatus.ACTIVE:
       return 'default'
     case LoanStatus.PENDING:
       return 'secondary'
     case LoanStatus.REJECTED:
-      return 'destructive'
     case LoanStatus.DEFAULTED:
       return 'destructive'
     case LoanStatus.PAID_OFF:
