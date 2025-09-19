@@ -3,7 +3,8 @@
 import { Button } from '@/components/ui/button'
 import { updateLoanStatus } from '@/lib/actions'
 import { Loan, LoanStatus } from '@/types/loan'
-import { CheckIcon, PauseIcon, PlayIcon, XIcon } from 'lucide-react'
+import { getAvailableStatusTransitions } from '@/utils/loans/getAvailableStatusTransitions'
+
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -30,28 +31,6 @@ export function LoanStatusActions({ loan }: LoanStatusActionsProps) {
     }
   }
 
-  const getAvailableStatusTransitions = (currentStatus: string) => {
-    switch (currentStatus) {
-      case LoanStatus.PENDING:
-        return [
-          { status: LoanStatus.APPROVED, label: 'Approve', icon: CheckIcon, variant: 'default' as const },
-          { status: LoanStatus.REJECTED, label: 'Reject', icon: XIcon, variant: 'destructive' as const },
-        ]
-      case LoanStatus.APPROVED:
-        return [
-          { status: LoanStatus.ACTIVE, label: 'Activate', icon: PlayIcon, variant: 'default' as const },
-          { status: LoanStatus.REJECTED, label: 'Reject', icon: XIcon, variant: 'destructive' as const },
-        ]
-      case LoanStatus.ACTIVE:
-        return [
-          { status: LoanStatus.PAID_OFF, label: 'Mark Paid Off', icon: CheckIcon, variant: 'default' as const },
-          { status: LoanStatus.DEFAULTED, label: 'Mark Defaulted', icon: PauseIcon, variant: 'destructive' as const },
-        ]
-      default:
-        return []
-    }
-  }
-
   const availableTransitions = getAvailableStatusTransitions(loan.status)
 
   if (availableTransitions.length === 0) {
@@ -67,7 +46,7 @@ export function LoanStatusActions({ loan }: LoanStatusActionsProps) {
       <div className="text-sm text-gray-600 mb-3">
         Current Status: <span className="font-medium">{loan.status.replace('_', ' ')}</span>
       </div>
-      
+
       {availableTransitions.map((transition) => {
         const Icon = transition.icon
         return (
